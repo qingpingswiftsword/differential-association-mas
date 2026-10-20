@@ -14,6 +14,16 @@ Every agent keeps a **closeness matrix** (亲疏表). When an agent (ego) receiv
 
 After success, ego's closeness toward every helper rises (+α) — **rings drift with reciprocity**, no fixed org chart.
 
+## Where real multi-agent systems already need this
+
+差序格局 maps onto four real constraints: context = money, permissions/compliance, physical bandwidth, accountability & reciprocity.
+
+- **Software dev agent teams** — full-repo context (100k+ tokens) only fits the resident ring (ring-1 must-review); adjacent modules get diff digests (ring-2 may-decline); compiler-backend/security audits trigger expansion.
+- **Hospital consultation agents** — privacy compliance makes closeness *be* the access boundary; the primary-care ring is obligated (首诊负责制), other departments get de-identified digests, rare diseases expand to expert pools.
+- **Quant research agent clusters** — proprietary signals are never broadcast (the claim board becomes a leak); ring membership is an earlier defense than declining.
+- **Warehouse robot fleets** — channel contention makes fleet-wide broadcast physically impossible; rings are the physics, not an optimization.
+- **Open-source maintainer hierarchies** — subsystem maintainers = ring-1 (must-review), regular contributors = ring-2 (may-decline), RFC broadcast = expansion, commit credits = reciprocity drift. The protocol isn't invented, it's observed.
+
 ## Three protocols, one stage
 
 | | chaxu 差序格局 | flat 扁平 claim（Agensh 式） | star 中心编排 |
