@@ -1,0 +1,109 @@
+{
+  "params": {
+    "agents": 24,
+    "teams": 4,
+    "tasks": 60,
+    "seed": 7,
+    "fail_at": 0.4,
+    "sweep": true,
+    "out": "results/demo.json"
+  },
+  "baseline": {
+    "chaxu": {
+      "mode": "chaxu",
+      "success_rate": 0.8667,
+      "avg_rounds_per_task": 1.0,
+      "context_tokens_total": 103040,
+      "context_tokens_per_task": 1717.3,
+      "messages_total": 1256,
+      "expansion_rate": 0.4333,
+      "post_failure_success_rate": 0.75
+    },
+    "flat": {
+      "mode": "flat",
+      "success_rate": 0.7667,
+      "avg_rounds_per_task": 1.23,
+      "context_tokens_total": 156180,
+      "context_tokens_per_task": 2603.0,
+      "messages_total": 890,
+      "expansion_rate": 0.0,
+      "post_failure_success_rate": 0.6667
+    },
+    "star": {
+      "mode": "star",
+      "success_rate": 0.85,
+      "avg_rounds_per_task": 61.0,
+      "context_tokens_total": 116690,
+      "context_tokens_per_task": 1944.8,
+      "messages_total": 2762,
+      "expansion_rate": 0.0,
+      "post_failure_success_rate": 0.0
+    }
+  },
+  "post_failure": {
+    "chaxu": {
+      "mode": "chaxu",
+      "success_rate": 0.875,
+      "avg_rounds_per_task": 1.0,
+      "context_tokens_total": 38580,
+      "context_tokens_per_task": 1607.5,
+      "messages_total": 480,
+      "expansion_rate": 0.375,
+      "post_failure_success_rate": 0.75
+    },
+    "flat": {
+      "mode": "flat",
+      "success_rate": 0.875,
+      "avg_rounds_per_task": 1.12,
+      "context_tokens_total": 62440,
+      "context_tokens_per_task": 2601.7,
+      "messages_total": 352,
+      "expansion_rate": 0.0,
+      "post_failure_success_rate": 0.6667
+    },
+    "star": {
+      "mode": "star",
+      "success_rate": 0.875,
+      "avg_rounds_per_task": 25.0,
+      "context_tokens_total": 46780,
+      "context_tokens_per_task": 1949.2,
+      "messages_total": 1104,
+      "expansion_rate": 0.0,
+      "post_failure_success_rate": 0.0
+    }
+  },
+  "token_model": {
+    "full": 200,
+    "digest": 40,
+    "slice": 60,
+    "proposal": 30,
+    "claim_board": 100,
+    "claim": 10
+  },
+  "sweep": [
+    {
+      "agents": 12,
+      "chaxu": 1314.2,
+      "flat": 1292.5,
+      "star": 1014.5
+    },
+    {
+      "agents": 24,
+      "chaxu": 1717.3,
+      "flat": 2603.0,
+      "star": 1944.8
+    },
+    {
+      "agents": 48,
+      "chaxu": 1874.2,
+      "flat": 5135.8,
+      "star": 3849.3
+    },
+    {
+      "agents": 96,
+      "chaxu": 1933.0,
+      "flat": 10171.3,
+      "star": 7653.0
+    }
+  ]
+}

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>差序格局 × 多智能体协作 — differential-association-mas</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  :root { --ink:#2b2b2b; --paper:#faf8f4; --seal:#b03a2e; --ring1:#b03a2e;
+          --ring2:#c98a2d; --far:#8a8f98; --line:#d8d2c4; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:"Songti SC","Noto Serif SC",Georgia,serif; background:var(--paper);
+         color:var(--ink); padding:32px 5vw 64px; }
+  h1 { font-size:30px; letter-spacing:2px; }
+  h1 .en { font-size:14px; color:#777; font-family:Georgia,serif; letter-spacing:0; }
+  .sub { margin:10px 0 26px; color:#666; font-size:14px; line-height:1.8; max-width:900px; }
+  .sub b { color:var(--seal); }
+  section { margin-top:40px; }
+  h2 { font-size:19px; border-left:4px solid var(--seal); padding-left:10px; margin-bottom:14px; }
+  .scene-wrap { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+  #ripple-box { background:#fff; border:1px solid var(--line); border-radius:8px; }
+  .panel { flex:1; min-width:280px; max-width:420px; }
+  .controls { display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+  button { font-family:inherit; font-size:14px; padding:8px 18px; background:var(--seal);
+           color:#fff; border:none; border-radius:4px; cursor:pointer; }
+  button:hover { opacity:.88; }
+  select { font-family:inherit; padding:7px; border:1px solid var(--line); border-radius:4px;
+           background:#fff; }
+  .verdict { margin-top:14px; min-height:52px; font-size:15px; line-height:1.7; }
+  .verdict .tag { display:inline-block; padding:2px 10px; border-radius:3px; color:#fff;
+                  font-size:13px; margin-right:8px; }
+  .legend { font-size:13px; color:#666; line-height:2; margin-top:10px; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin:0 6px 0 14px; }
+  .charts { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:24px; }
+  .chart { background:#fff; border:1px solid var(--line); border-radius:8px; height:340px; }
+  .chart-wide { grid-column:1/-1; height:360px; }
+  .foot { margin-top:48px; font-size:12.5px; color:#888; line-height:1.9; border-top:1px solid var(--line);
+          padding-top:18px; max-width:1000px; }
+  .foot a { color:var(--seal); }
+  .err { color:var(--seal); margin-top:16px; }
+</style>
+</head>
+<body>
+<h1>差序格局 · 多智能体协作最小演示<br>
+  <span class="en">differential-association-mas — Fei Xiaotong's differential mode of association as an organizational prior</span></h1>
+<p class="sub">
+  费孝通《乡土中国》："社会关系……好像把一块石头丢在水面上所发生的一圈圈推出去的波纹。"
+  本 demo 把这句话变成可计算的协作协议：每个 agent 维护亲疏表，任务自 ego 投石入水——
+  <b>环1 义务必应、收完整上下文；环2 人情可拒、收摘要；覆盖不住，圈子外扩一格</b>。
+  与无中心扁平自组织（<a href="https://arxiv.org/abs/2609.26781" style="color:var(--seal)">Agensh, 2026</a>
+  式 claim loop）和中心 orchestrator（星型）同场对比。全部规则化仿真，零 API key，seeded 确定性可复现。
+</p>
+
+<section>
+  <h2>涟漪：一次任务的投放 <span style="font-size:13px;color:#999">（亲疏会随互惠实时演化——多投几块石头试试）</span></h2>
+  <div class="scene-wrap">
+    <div id="ripple-box"></div>
+    <div class="panel">
+      <div class="controls">
+        <button id="cast">投放一块石头</button>
+        <select id="task-pick"></select>
+      </div>
+      <div class="verdict" id="verdict">任务未投放。石头入水，波纹按亲疏外推。</div>
+      <div class="legend">
+        <span class="dot" style="background:var(--ring1)"></span>环1 · 义务圈（全文 200t，必应）<br>
+        <span class="dot" style="background:var(--ring2)"></span>环2 · 人情圈（摘要 40t，顺手才帮，能帮不帮则疏远）<br>
+        <span class="dot" style="background:var(--far)"></span>环外 · 陌生（不接触任务，只看结果）<br>
+        <span class="dot" style="background:#5b7aa0"></span>同队初始 +0.3 亲密度；受助成功 +α，能力可及而拒 −β
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>三模式对比 <span style="font-size:13px;color:#999">（来自 results/demo.json，seeded 仿真）</span></h2>
+  <div class="charts">
+    <div class="chart" id="chart-success"></div>
+    <div class="chart" id="chart-tokens"></div>
+    <div class="chart chart-wide" id="chart-sweep"></div>
+  </div>
+  <div class="err" id="data-err" style="display:none"></div>
+</section>
+
+<div class="foot">
+  <b>诚实边界</b>：全部 agent 为规则化启发（无 LLM）；token 为统一计费模型（full 200 / digest 40 / slice 60 /
+  proposal 30 / claim-board 100 / claim 10）；star 的 rounds 含中心串行排队（线性增长模型）。
+  跨多个 seed 的稳定结论是：<b>差序格局赢上下文成本（环是 O(k)，广播与星型是 O(n)，规模越大差距越大）与故障恢复
+  （圈子外扩即重构，星型中心死亡归零）</b>；成功率不设上限主张——全员池的 flat/star 在部分 seed 上更高。
+  复现：<code>python run_demo.py --sweep</code>。 License: MIT.
+</div>
+
+<script>
+const R1=3, R2=4, W=560, H=560, CX=W/2, CY=H/2;
+let DATA=null, DEMO=null, closeness=null, taskIdx=0, busy=false;
+
+fetch('data.json').then(r=>r.json()).then(d=>{DATA=d; initScene();})
+  .catch(e=>{ document.getElementById('verdict').innerHTML =
+    '<span style="color:#b03a2e">data.json 加载失败——请在仓库根目录 <code>python -m http.server</code> 后访问。</span>'; });
+fetch('../results/demo.json').then(r=>r.json()).then(d=>{DEMO=d; drawCharts();})
+  .catch(e=>{ const el=document.getElementById('data-err');
+    el.style.display='block'; el.textContent='results/demo.json 加载失败：对比图不可用（clone 后先跑一次 run_demo.py）。'; });
+
+function rank(ego){ const o=[]; for(let j=0;j<DATA.agents.length;j++) if(j!==ego) o.push(j);
+  o.sort((a,b)=>(closeness[ego][b]-closeness[ego][a])||(a-b)); return o; }
+function rings(ego){ const o=rank(ego); return [o.slice(0,R1), o.slice(R1,R1+R2)]; }
+function covers(a,skill,level,slack){ return (a.skills[skill]||0)>=level-slack; }
+function unsolved(task,contribs){ return task.skills.filter(s=>
+  Math.max(0,...contribs.map(c=>(DATA.agents[c[0]].skills[s]||0)+c[1]))<task.level); }
+
+const TEAM_COLORS=['#5b7aa0','#7a9a6d','#a08a5b','#8a6d9a','#6d9a95','#a05b6d'];
+
+function initScene(){
+  closeness = DATA.closeness.map(r=>r.slice());
+  const sel=document.getElementById('task-pick');
+  DATA.tasks.forEach((t,i)=>{ const op=document.createElement('option');
+    op.value=i; op.textContent=`任务 ${t.tid}（ego #${t.ego}，需 ${t.skills.join('+')} ≥${t.level}）`;
+    sel.appendChild(op); });
+  sel.onchange=()=>{ taskIdx=+sel.value; drawScene(DATA.tasks[taskIdx], null); };
+  drawScene(DATA.tasks[0], null);
+}
+
+function layout(ego,ring1,ring2){
+  const pos=[]; pos[ego]={x:CX,y:CY};
+  const others=rank(ego);
+  const r1set=new Set(ring1), r2set=new Set(ring2);
+  let a1=0, a2=0, a3=0;
+  others.forEach(id=>{
+    let r,ang;
+    if(r1set.has(id)){ r=115; ang=a1++/Math.max(1,ring1.length)*2*Math.PI; }
+    else if(r2set.has(id)){ r=200; ang=a2++/Math.max(1,ring2.length)*2*Math.PI; }
+    else { r=262; ang=a3++/(others.length-ring1.length-ring2.length)*2*Math.PI; }
+    pos[id]={x:CX+r*Math.cos(ang), y:CY+r*Math.sin(ang)};
+  });
+  return pos;
+}
+
+let svgRoot=null;
+function drawScene(task,phase){
+  const box=document.getElementById('ripple-box');
+  const [ring1,ring2]=rings(task.ego);
+  const pos=layout(task.ego,ring1,ring2);
+  const r1set=new Set(ring1), r2set=new Set(ring2);
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  s+=`<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+       markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#999"/></marker></defs>`;
+  // 同队淡背景圈
+  s+=`<circle cx="${CX}" cy="${CY}" r="285" fill="none" stroke="#eee7d8" stroke-width="60"/>`;
+  if(phase){ // 波纹
+    for(const w of phase.ripples){
+      s+=`<circle cx="${CX}" cy="${CY}" r="${w.r}" fill="none" stroke="var(--seal)"
+           stroke-width="${2.4-w.r/120}" opacity="${Math.max(0,0.75-w.r/400)}"/>`;
+    }
+  }
+  // 边
+  rank(task.ego).forEach(id=>{
+    if(!r1set.has(id)&&!r2set.has(id)) return;
+    const p=pos[id], e=pos[task.ego];
+    const c=closeness[task.ego][id];
+    const wdt=r1set.has(id)?2.6:1.1, dash=r1set.has(id)?'':'6,5';
+    const col=r1set.has(id)?'var(--ring1)':'var(--ring2)';
+    const lit=phase&&phase.lit&&phase.lit.has(id);
+    s+=`<line x1="${e.x}" y1="${e.y}" x2="${p.x}" y2="${p.y}" stroke="${col}"
+         stroke-width="${lit?wdt*2:wdt}" ${dash?`stroke-dasharray="${dash}"`:''}
+         opacity="${lit?0.95:0.3+c*0.6}"/>`;
+  });
+  // 节点
+  DATA.agents.forEach(a=>{
+    const p=pos[a.aid]; if(!p) return;
+    const isEgo=a.aid===task.ego;
+    const fill=isEgo?'var(--seal)':(r1set.has(a.aid)?'var(--ring1)':(r2set.has(a.aid)?'var(--ring2)':'#b9b2a4'));
+    const rad=isEgo?15:(r1set.has(a.aid)?11:(r2set.has(a.aid)?9.5:7));
+    const halo=(phase&&phase.lit&&phase.lit.has(a.aid))?`<circle cx="${p.x}" cy="${p.y}" r="${rad+6}"
+      fill="none" stroke="${fill}" stroke-width="1.6" opacity="0.9"/>`:'';
+    s+=`${halo}<circle cx="${p.x}" cy="${p.y}" r="${rad}" fill="${fill}"
+         stroke="#fff" stroke-width="1.5"><title>#${a.aid} team${a.team}</title></circle>`;
+    if(rad>=9) s+=`<text x="${p.x}" y="${p.y+3.5}" text-anchor="middle" font-size="9"
+         fill="#fff" font-family="Georgia">${a.aid}</text>`;
+  });
+  s+='</svg>';
+  box.innerHTML=s; svgRoot=box.firstChild;
+}
+
+const FAST=new URLSearchParams(location.search).has('fast');
+const sleep=ms=>FAST?Promise.resolve():new Promise(r=>setTimeout(r,ms));
+
+async function cast(){
+  if(busy) return; busy=true;
+  const task=DATA.tasks[taskIdx];
+  const [ring1,ring2]=rings(task.ego);
+  const verdict=document.getElementById('verdict');
+  const phase={ripples:[],lit:new Set()};
+
+  // 波纹一圈圈推出去
+  for(let r=20;r<=270;r+=28){ phase.ripples.push({r}); drawScene(task,phase); await sleep(42); }
+
+  // 环1 必应
+  ring1.forEach(id=>phase.lit.add(id)); drawScene(task,phase);
+  verdict.innerHTML=`<span class="tag" style="background:var(--ring1)">环1</span>
+    ${ring1.map(id=>'#'+id).join('、')} 义务必应（全文 200t）…`; await sleep(750);
+
+  // 环2 顺手才帮（确定性近似：相关即应，标注可拒）
+  const contribs=ring1.map(id=>[id,0.15]);
+  ring2.forEach(id=>{
+    const a=DATA.agents[id];
+    if(task.skills.some(s=>covers(a,s,task.level,0.05))){ phase.lit.add(id); contribs.push([id,0.05]); }
+  });
+  drawScene(task,phase);
+  verdict.innerHTML+=`<br><span class="tag" style="background:var(--ring2)">环2</span>
+    出力的：${contribs.slice(ring1.length).map(id=>'#'+id).join('、')||'无'}（摘要 40t，顺手才帮）…`;
+  await sleep(750);
+
+  let missing=unsolved(task,contribs), expanded=false;
+  if(missing.length){
+    expanded=true;
+    verdict.innerHTML+=`<br><span class="tag" style="background:#444">外扩</span>
+      尚缺 ${missing.join('/')} → 圈子外扩一格…`; await sleep(700);
+    const order=rank(task.ego), band=order.slice(R1+R2,R1+R2+8);
+    for(let r=230;r<=330;r+=25){ phase.ripples.push({r}); drawScene(task,phase); await sleep(36); }
+    band.forEach(id=>{ const a=DATA.agents[id];
+      if(task.skills.some(s=>covers(a,s,task.level,0.05))){ phase.lit.add(id); contribs.push([id,0.15]); }});
+    drawScene(task,phase); await sleep(700);
+  }
+  missing=unsolved(task,contribs);
+  // 互惠更新（与 Python 同规则）：成功 → 受助者 +0.05；此处演示只做正向
+  if(!missing.length) contribs.forEach(([id])=>{ closeness[task.ego][id]=Math.min(1,closeness[task.ego][id]+0.05); });
+  drawScene(task,phase);
+  const ok=!missing.length;
+  verdict.innerHTML+=`<br><span class="tag" style="background:${ok?'#3d7a4f':'#b03a2e'}">
+    ${ok?(expanded?'外扩后达成':'环内达成'):'未达成'}</span>
+    ${ok?`ego 的亲疏表向 ${contribs.length} 位出力者各 +0.05 —— 下次的涟漪会更近他们。`
+        :`所需技能圈外无解：这一块石头，涟漪再远也打不湿。`}`;
+  busy=false;
+}
+document.getElementById('cast').onclick=cast;
+
+// ————— 对比图 —————
+function drawCharts(){
+  const B=DEMO.baseline, PF=DEMO.post_failure||B;
+  const modes=['chaxu','flat','star'], names=['差序格局','扁平 claim','中心星型'];
+  const colors=['#b03a2e','#c98a2d','#5b7aa0'];
+  const axis={axisLabel:{fontSize:12,fontFamily:'inherit'},axisLine:{lineStyle:{color:'#cfc8b8'}}};
+  echarts.init(document.getElementById('chart-success')).setOption({
+    title:{text:'任务成功率 / 故障后恢复率',textStyle:{fontSize:14},left:'center'},
+    legend:{top:28}, grid:{top:64,bottom:32,left:44,right:16},
+    xAxis:{type:'category',data:names,...axis}, yAxis:{type:'value',max:1,...axis,
+      axisLabel:{formatter:v=>(v*100)+'%'}},
+    series:[
+      {name:'baseline 成功率',type:'bar',barWidth:26,
+       data:modes.map((m,i)=>({value:B[m].success_rate,itemStyle:{color:colors[i]}}))},
+      {name:'故障后恢复率',type:'bar',barWidth:26,
+       data:modes.map((m,i)=>({value:(PF[m].post_failure_success_rate??0),itemStyle:{color:colors[i],opacity:.45}}))}]});
+  echarts.init(document.getElementById('chart-tokens')).setOption({
+    title:{text:'上下文 token / 任务（baseline）',textStyle:{fontSize:14},left:'center'},
+    grid:{top:48,bottom:32,left:56,right:16},
+    xAxis:{type:'category',data:names,...axis}, yAxis:{type:'value',...axis},
+    series:[{type:'bar',barWidth:40,label:{show:true,position:'top',fontSize:11},
+      data:modes.map((m,i)=>({value:B[m].context_tokens_per_task,itemStyle:{color:colors[i]}}))}]});
+  if(DEMO.sweep){
+    echarts.init(document.getElementById('chart-sweep')).setOption({
+      title:{text:'规模扫描：成本是否随组织变大而爆炸？',subtext:'差序=O(k) 环，广播/星型=O(n)',
+        textStyle:{fontSize:14},subtextStyle:{fontSize:11,color:'#888'},left:'center'},
+      legend:{top:30}, grid:{top:70,bottom:36,left:60,right:24},
+      xAxis:{type:'category',data:DEMO.sweep.map(r=>r.agents+' agents'),...axis},
+      yAxis:{type:'value',name:'tokens/任务',...axis},
+      series:modes.map((m,i)=>({name:names[i],type:'line',smooth:true,symbolSize:7,
+        lineStyle:{width:3,color:colors[i]},itemStyle:{color:colors[i]},
+        data:DEMO.sweep.map(r=>r[m])}))});
+  }
+}
+</script>
+</body>
+</html>
