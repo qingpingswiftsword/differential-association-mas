@@ -14,15 +14,26 @@ Every agent keeps a **closeness matrix** (亲疏表). When an agent (ego) receiv
 
 After success, ego's closeness toward every helper rises (+α) — **rings drift with reciprocity**, no fixed org chart.
 
-## Where real multi-agent systems already need this
+## 现实映射：哪些多智能体场景天然需要差序
 
-差序格局 maps onto four real constraints: context = money, permissions/compliance, physical bandwidth, accountability & reciprocity.
+差序格局不是复古审美，它对应四条现实约束：**上下文=钱**（全文只喂得起少数）、**权限与合规**（"亲"就是访问边界）、**带宽物理受限**（广播不可行）、**责任与互惠**（必应 vs 可拒）。下面每个场景都同时踩中不止一条：
 
-- **Software dev agent teams** — full-repo context (100k+ tokens) only fits the resident ring (ring-1 must-review); adjacent modules get diff digests (ring-2 may-decline); compiler-backend/security audits trigger expansion.
-- **Hospital consultation agents** — privacy compliance makes closeness *be* the access boundary; the primary-care ring is obligated (首诊负责制), other departments get de-identified digests, rare diseases expand to expert pools.
-- **Quant research agent clusters** — proprietary signals are never broadcast (the claim board becomes a leak); ring membership is an earlier defense than declining.
-- **Warehouse robot fleets** — channel contention makes fleet-wide broadcast physically impossible; rings are the physics, not an optimization.
-- **Open-source maintainer hierarchies** — subsystem maintainers = ring-1 (must-review), regular contributors = ring-2 (may-decline), RFC broadcast = expansion, commit credits = reciprocity drift. The protocol isn't invented, it's observed.
+**① 软件研发智能体团队**（上下文=钱 · 责任分层）
+monorepo 全库上下文动辄上百 k token，喂不起全员广播。环1 = 同仓库常驻 agent，义务必应 review、收全文；环2 = 相邻模块 agent，收 diff 摘要、顺手才帮；编译器后端、安全审计等生僻需求触发外扩拉专家；常年互相 review 的圈子随互惠自然收紧。
+
+**② 医院多智能体会诊**（权限与合规 · 责任分层）
+电子病历全文受隐私合规约束——"亲疏"在这里就是访问控制，不只是省钱。环1 = 主诊团，义务必应（首诊负责制）、收病历全文；环2 = 其他科室，去标识摘要、会诊排期可拒（拒了伤声誉 = −β）；罕见病外扩跨院专家池。对照：所有会诊排一个总调度 = 星型的中心单点，宕机全院停摆。
+
+**③ 量化研究 agent 集群**（权限与合规 · 上下文=钱）
+私有因子假设/信号不广播——claim 板在这里就是泄密白板。环1 = 同策略组，共享完整假设链与原始信号；环2 = 跨组，只收结论摘要，且**能及而不该看的人根本不在环里**（环成员资格是比婉拒更早的一层防御）；因子贡献追溯 = 关系漂移的记账。
+
+**④ 仓储机器人集群**（带宽物理受限）
+Wi-Fi 信道竞争让全队广播物理不可行——O(k) 在这里不是经济学选择，是物理必然。环1 = 同巷道/同班次机器人，收全量状态；环2 = 邻区，心跳摘要；任务超本地能力跨区呼叫支援（外扩）。对照：中心调度器单点死亡 = 本 demo 中唯一 0% 恢复的形态。
+
+**⑤ 开源社区 maintainer 层级**（责任分层 · 互惠记账）
+回到人类社会本身：Linux kernel 的 reviewer 层级就是差序格局的活标本——这套协议不是发明，是观察。环1 = subsystem maintainer，PR 义务必应 review；环2 = 常驻 contributor，顺手才帮，能 review 而不 review 伤关系；coverage 失败才发 RFC 全员广播（最贵也最少用）；commit credit 让亲疏表随贡献漂移，无固定组织架构图。
+
+> 对照读法：flat 假设"广播给所有人、大家抢着做"，在**权限、带宽、成本**三面墙前同时不成立；star 把所有协调压给一个中心，对应现实中"所有事等一个调度者"的队列（本 demo 中 p50=62 轮、通信 Gini 0.70）。
 
 ## Three protocols, one stage
 
