@@ -13,30 +13,101 @@
       "mode": "chaxu",
       "success_rate": 0.8667,
       "avg_rounds_per_task": 1.0,
+      "rounds_p50": 1,
+      "rounds_p95": 1,
       "context_tokens_total": 103040,
       "context_tokens_per_task": 1717.3,
+      "tokens_by": {
+        "ego_coord": 0,
+        "full": 77600,
+        "proposal": 13440,
+        "digest": 9600,
+        "claim": 2400
+      },
       "messages_total": 1256,
       "expansion_rate": 0.4333,
+      "gini_touches": 0.2697,
+      "batch_success": [
+        0.8,
+        0.9333,
+        0.8667,
+        0.8667
+      ],
+      "difficulty": {
+        "n2_easy": 1.0,
+        "n2_hard": 0.75,
+        "n3_easy": 1.0,
+        "n3_hard": 0.6429
+      },
+      "closeness_top5_share": [
+        0.9806,
+        0.9635,
+        0.9561,
+        0.9372
+      ],
       "post_failure_success_rate": 0.75
     },
     "flat": {
       "mode": "flat",
       "success_rate": 0.7667,
       "avg_rounds_per_task": 1.23,
+      "rounds_p50": 1,
+      "rounds_p95": 2,
       "context_tokens_total": 156180,
       "context_tokens_per_task": 2603.0,
+      "tokens_by": {
+        "claim_board": 138000,
+        "claim": 5730,
+        "proposal": 12450
+      },
       "messages_total": 890,
       "expansion_rate": 0.0,
+      "gini_touches": 0.1323,
+      "batch_success": [
+        0.8,
+        0.8667,
+        0.7333,
+        0.6667
+      ],
+      "difficulty": {
+        "n2_easy": 1.0,
+        "n2_hard": 0.6667,
+        "n3_easy": 1.0,
+        "n3_hard": 0.2857
+      },
+      "closeness_top5_share": [],
       "post_failure_success_rate": 0.6667
     },
     "star": {
       "mode": "star",
       "success_rate": 0.85,
       "avg_rounds_per_task": 61.0,
+      "rounds_p50": 62,
+      "rounds_p95": 114,
       "context_tokens_total": 116690,
       "context_tokens_per_task": 1944.8,
+      "tokens_by": {
+        "full": 12000,
+        "proposal": 17430,
+        "slice": 79260,
+        "claim": 8000
+      },
       "messages_total": 2762,
       "expansion_rate": 0.0,
+      "gini_touches": 0.7015,
+      "batch_success": [
+        0.8,
+        0.9333,
+        0.8,
+        0.8667
+      ],
+      "difficulty": {
+        "n2_easy": 1.0,
+        "n2_hard": 0.75,
+        "n3_easy": 1.0,
+        "n3_hard": 0.5714
+      },
+      "closeness_top5_share": [],
       "post_failure_success_rate": 0.0
     }
   },
@@ -45,31 +116,264 @@
       "mode": "chaxu",
       "success_rate": 0.875,
       "avg_rounds_per_task": 1.0,
+      "rounds_p50": 1,
+      "rounds_p95": 1,
       "context_tokens_total": 38580,
       "context_tokens_per_task": 1607.5,
+      "tokens_by": {
+        "ego_coord": 0,
+        "full": 28800,
+        "proposal": 4980,
+        "digest": 3840,
+        "claim": 960
+      },
       "messages_total": 480,
       "expansion_rate": 0.375,
+      "gini_touches": 0.2844,
+      "batch_success": [
+        0.6667,
+        0.8333,
+        1.0,
+        1.0
+      ],
+      "difficulty": {
+        "n2_easy": 1.0,
+        "n2_hard": 0.8,
+        "n3_easy": 1.0,
+        "n3_hard": 0.3333
+      },
+      "closeness_top5_share": [],
       "post_failure_success_rate": 0.75
     },
     "flat": {
       "mode": "flat",
       "success_rate": 0.875,
       "avg_rounds_per_task": 1.12,
+      "rounds_p50": 1,
+      "rounds_p95": 2,
       "context_tokens_total": 62440,
       "context_tokens_per_task": 2601.7,
+      "tokens_by": {
+        "claim_board": 55200,
+        "claim": 2320,
+        "proposal": 4920
+      },
       "messages_total": 352,
       "expansion_rate": 0.0,
+      "gini_touches": 0.1328,
+      "batch_success": [
+        0.6667,
+        0.8333,
+        1.0,
+        1.0
+      ],
+      "difficulty": {
+        "n2_easy": 1.0,
+        "n2_hard": 0.8,
+        "n3_easy": 1.0,
+        "n3_hard": 0.3333
+      },
+      "closeness_top5_share": [],
       "post_failure_success_rate": 0.6667
     },
     "star": {
       "mode": "star",
       "success_rate": 0.875,
       "avg_rounds_per_task": 25.0,
+      "rounds_p50": 26,
+      "rounds_p95": 46,
       "context_tokens_total": 46780,
       "context_tokens_per_task": 1949.2,
+      "tokens_by": {
+        "full": 4800,
+        "proposal": 7170,
+        "slice": 31680,
+        "claim": 3130
+      },
       "messages_total": 1104,
       "expansion_rate": 0.0,
+      "gini_touches": 0.7025,
+      "batch_success": [
+        0.6667,
+        0.8333,
+        1.0,
+        1.0
+      ],
+      "difficulty": {
+        "n2_easy": 1.0,
+        "n2_hard": 0.8,
+        "n3_easy": 1.0,
+        "n3_hard": 0.3333
+      },
+      "closeness_top5_share": [],
       "post_failure_success_rate": 0.0
+    }
+  },
+  "ablation": {
+    "chaxu 默认": {
+      "mode": "chaxu",
+      "success_rate": 0.8667,
+      "avg_rounds_per_task": 1.0,
+      "rounds_p50": 1,
+      "rounds_p95": 1,
+      "context_tokens_total": 103040,
+      "context_tokens_per_task": 1717.3,
+      "tokens_by": {
+        "ego_coord": 0,
+        "full": 77600,
+        "proposal": 13440,
+        "digest": 9600,
+        "claim": 2400
+      },
+      "messages_total": 1256,
+      "expansion_rate": 0.4333,
+      "gini_touches": 0.2697,
+      "batch_success": [
+        0.8,
+        0.9333,
+        0.8667,
+        0.8667
+      ],
+      "difficulty": {
+        "n2_easy": 1.0,
+        "n2_hard": 0.75,
+        "n3_easy": 1.0,
+        "n3_hard": 0.6429
+      },
+      "closeness_top5_share": [],
+      "post_failure_success_rate": null
+    },
+    "无外扩": {
+      "mode": "chaxu",
+      "success_rate": 0.5167,
+      "avg_rounds_per_task": 1.0,
+      "rounds_p50": 1,
+      "rounds_p95": 1,
+      "context_tokens_total": 54990,
+      "context_tokens_per_task": 916.5,
+      "tokens_by": {
+        "ego_coord": 0,
+        "full": 36000,
+        "proposal": 6990,
+        "digest": 9600,
+        "claim": 2400
+      },
+      "messages_total": 840,
+      "expansion_rate": 0.0,
+      "gini_touches": 0.3066,
+      "batch_success": [
+        0.5333,
+        0.6667,
+        0.5333,
+        0.3333
+      ],
+      "difficulty": {
+        "n2_easy": 0.68,
+        "n2_hard": 0.4167,
+        "n3_easy": 0.7778,
+        "n3_hard": 0.1429
+      },
+      "closeness_top5_share": [],
+      "post_failure_success_rate": null
+    },
+    "宽环 r1=5,r2=8": {
+      "mode": "chaxu",
+      "success_rate": 0.8667,
+      "avg_rounds_per_task": 1.0,
+      "rounds_p50": 1,
+      "rounds_p95": 1,
+      "context_tokens_total": 126830,
+      "context_tokens_per_task": 2113.8,
+      "tokens_by": {
+        "ego_coord": 0,
+        "full": 86000,
+        "proposal": 16830,
+        "digest": 19200,
+        "claim": 4800
+      },
+      "messages_total": 1820,
+      "expansion_rate": 0.2167,
+      "gini_touches": 0.2338,
+      "batch_success": [
+        0.8,
+        0.9333,
+        0.8667,
+        0.8667
+      ],
+      "difficulty": {
+        "n2_easy": 1.0,
+        "n2_hard": 0.8333,
+        "n3_easy": 1.0,
+        "n3_hard": 0.5714
+      },
+      "closeness_top5_share": [],
+      "post_failure_success_rate": null
+    },
+    "无互惠 α=β=0": {
+      "mode": "chaxu",
+      "success_rate": 0.8667,
+      "avg_rounds_per_task": 1.0,
+      "rounds_p50": 1,
+      "rounds_p95": 1,
+      "context_tokens_total": 108350,
+      "context_tokens_per_task": 1805.8,
+      "tokens_by": {
+        "ego_coord": 0,
+        "full": 82400,
+        "proposal": 13950,
+        "digest": 9600,
+        "claim": 2400
+      },
+      "messages_total": 1304,
+      "expansion_rate": 0.4833,
+      "gini_touches": 0.2807,
+      "batch_success": [
+        0.8,
+        0.9333,
+        0.8667,
+        0.8667
+      ],
+      "difficulty": {
+        "n2_easy": 1.0,
+        "n2_hard": 0.75,
+        "n3_easy": 1.0,
+        "n3_hard": 0.6429
+      },
+      "closeness_top5_share": [],
+      "post_failure_success_rate": null
+    },
+    "无婉拒 p=0": {
+      "mode": "chaxu",
+      "success_rate": 0.8667,
+      "avg_rounds_per_task": 1.0,
+      "rounds_p50": 1,
+      "rounds_p95": 1,
+      "context_tokens_total": 100260,
+      "context_tokens_per_task": 1671.0,
+      "tokens_by": {
+        "ego_coord": 0,
+        "full": 74400,
+        "proposal": 13860,
+        "digest": 9600,
+        "claim": 2400
+      },
+      "messages_total": 1224,
+      "expansion_rate": 0.4,
+      "gini_touches": 0.2692,
+      "batch_success": [
+        0.8,
+        0.9333,
+        0.8667,
+        0.8667
+      ],
+      "difficulty": {
+        "n2_easy": 1.0,
+        "n2_hard": 0.75,
+        "n3_easy": 1.0,
+        "n3_hard": 0.6429
+      },
+      "closeness_top5_share": [],
+      "post_failure_success_rate": null
     }
   },
   "token_model": {
@@ -78,7 +382,16 @@
     "slice": 60,
     "proposal": 30,
     "claim_board": 100,
-    "claim": 10
+    "claim": 10,
+    "ego_coord": 0
+  },
+  "token_labels": {
+    "full": "环1 全文",
+    "digest": "环2 摘要",
+    "slice": "星型切片",
+    "proposal": "提案",
+    "claim_board": "claim 板广播",
+    "claim": "claim/谢绝"
   },
   "sweep": [
     {

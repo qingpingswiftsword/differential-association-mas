@@ -7,16 +7,24 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <style>
   :root { --ink:#2b2b2b; --paper:#faf8f4; --seal:#b03a2e; --ring1:#b03a2e;
-          --ring2:#c98a2d; --far:#8a8f98; --line:#d8d2c4; }
+          --ring2:#c98a2d; --far:#8a8f98; --line:#d8d2c4; --blue:#5b7aa0; --green:#7a9a6d; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:"Songti SC","Noto Serif SC",Georgia,serif; background:var(--paper);
          color:var(--ink); padding:32px 5vw 64px; }
   h1 { font-size:30px; letter-spacing:2px; }
   h1 .en { font-size:14px; color:#777; font-family:Georgia,serif; letter-spacing:0; }
-  .sub { margin:10px 0 26px; color:#666; font-size:14px; line-height:1.8; max-width:900px; }
+  .sub { margin:10px 0 20px; color:#666; font-size:14px; line-height:1.8; max-width:960px; }
   .sub b { color:var(--seal); }
-  section { margin-top:40px; }
-  h2 { font-size:19px; border-left:4px solid var(--seal); padding-left:10px; margin-bottom:14px; }
+  nav { position:sticky; top:0; z-index:9; background:var(--paper); border-bottom:1px solid var(--line);
+        padding:10px 0; margin-bottom:10px; }
+  nav a { color:var(--ink); text-decoration:none; font-size:14px; margin-right:22px;
+          border-bottom:2px solid transparent; padding-bottom:3px; }
+  nav a:hover { border-bottom-color:var(--seal); color:var(--seal); }
+  section { margin-top:46px; }
+  h2 { font-size:19px; border-left:4px solid var(--seal); padding-left:10px; margin-bottom:6px; }
+  h2 .tag { font-size:12px; color:#999; font-weight:normal; }
+  .desc { font-size:13.5px; color:#777; line-height:1.8; margin-bottom:14px; max-width:960px; }
+  .desc b { color:var(--ink); }
   .scene-wrap { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
   #ripple-box { background:#fff; border:1px solid var(--line); border-radius:8px; }
   .panel { flex:1; min-width:280px; max-width:420px; }
@@ -34,6 +42,9 @@
   .charts { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:24px; }
   .chart { background:#fff; border:1px solid var(--line); border-radius:8px; height:340px; }
   .chart-wide { grid-column:1/-1; height:360px; }
+  .findings { background:#fff; border:1px solid var(--line); border-left:4px solid var(--seal);
+              border-radius:0 8px 8px 0; padding:14px 18px; margin-top:16px; font-size:14px;
+              line-height:2; max-width:960px; }
   .foot { margin-top:48px; font-size:12.5px; color:#888; line-height:1.9; border-top:1px solid var(--line);
           padding-top:18px; max-width:1000px; }
   .foot a { color:var(--seal); }
@@ -51,8 +62,14 @@
   式 claim loop）和中心 orchestrator（星型）同场对比。全部规则化仿真，零 API key，seeded 确定性可复现。
 </p>
 
-<section>
-  <h2>涟漪：一次任务的投放 <span style="font-size:13px;color:#999">（亲疏会随互惠实时演化——多投几块石头试试）</span></h2>
+<nav>
+  <a href="#ripple">涟漪</a><a href="#overview">总览</a><a href="#cost">成本结构</a>
+  <a href="#scale">规模</a><a href="#ablation">消融</a><a href="#org">组织结构</a>
+  <a href="#learn">学习与难度</a>
+</nav>
+
+<section id="ripple">
+  <h2>涟漪：一次任务的投放 <span class="tag">亲疏随互惠实时演化——多投几块石头试试</span></h2>
   <div class="scene-wrap">
     <div id="ripple-box"></div>
     <div class="panel">
@@ -65,40 +82,93 @@
         <span class="dot" style="background:var(--ring1)"></span>环1 · 义务圈（全文 200t，必应）<br>
         <span class="dot" style="background:var(--ring2)"></span>环2 · 人情圈（摘要 40t，顺手才帮，能帮不帮则疏远）<br>
         <span class="dot" style="background:var(--far)"></span>环外 · 陌生（不接触任务，只看结果）<br>
-        <span class="dot" style="background:#5b7aa0"></span>同队初始 +0.3 亲密度；受助成功 +α，能力可及而拒 −β
+        <span class="dot" style="background:var(--blue)"></span>同队初始 +0.3 亲密度；受助成功 +α，能力可及而拒 −β
       </div>
     </div>
   </div>
 </section>
 
-<section>
-  <h2>三模式对比 <span style="font-size:13px;color:#999">（来自 results/demo.json，seeded 仿真）</span></h2>
+<section id="overview">
+  <h2>总览：三模式成绩单</h2>
+  <p class="desc">成功率与<b>故障后恢复率</b>（40% 进度处注入故障：chaxu 环1 失效、flat 30% 成员退池、star 中心死亡），
+     以及延迟分布（均值 vs p95——star 的排队让 p95 远离均值）。</p>
   <div class="charts">
     <div class="chart" id="chart-success"></div>
-    <div class="chart" id="chart-tokens"></div>
-    <div class="chart chart-wide" id="chart-sweep"></div>
+    <div class="chart" id="chart-rounds"></div>
   </div>
-  <div class="err" id="data-err" style="display:none"></div>
+</section>
+
+<section id="cost">
+  <h2>成本结构：token 花在了什么上</h2>
+  <p class="desc">同一任务的上下文开销按类型分解：chaxu 花在<b>环内精准投喂</b>（全文只给义务圈、摘要给人情圈），
+     flat 的成本大头是<b>全员读板</b>（广播即成本），star 的成本是<b>切片全撒 + 提案回收</b>。</p>
+  <div class="charts">
+    <div class="chart" id="chart-tokens"></div>
+    <div class="chart" id="chart-breakdown"></div>
+  </div>
+</section>
+
+<section id="scale">
+  <h2>规模扫描：成本是否随组织变大而爆炸</h2>
+  <p class="desc">差序是 <b>O(k)</b>（环带固定宽度），广播与星型是 <b>O(n)</b>——12 人时三者无差，
+     96 人时 chaxu 比 flat 便宜 <b>5.3 倍</b>。"涟漪只打湿它需要打湿的人。"</p>
+  <div class="charts"><div class="chart chart-wide" id="chart-sweep"></div></div>
+</section>
+
+<section id="ablation">
+  <h2>消融：差序格局的哪个零件在承重</h2>
+  <p class="desc">固定 chaxu，逐件拆：</p>
+  <div class="charts">
+    <div class="chart" id="chart-abl-success"></div>
+    <div class="chart" id="chart-abl-tokens"></div>
+  </div>
+  <div class="findings" id="abl-findings"></div>
+</section>
+
+<section id="org">
+  <h2>组织结构：谁在跟谁说话</h2>
+  <p class="desc"><b>通信基尼系数</b>（每人通信触达量的不平等度，0=人人平等，1=单点独大）：
+     star 是通信独占（中心 = 故障点 = 瓶颈），flat 最平等，chaxu 是<b>核心-边缘</b>——
+     不平等但不独占，恰是差序格局的社会学形状。下右图为 chaxu 的<b>关系收束度</b>
+     （全体 ego 的 top-5 亲密度份额）随任务批次演化。</p>
+  <div class="charts">
+    <div class="chart" id="chart-gini"></div>
+    <div class="chart" id="chart-close"></div>
+  </div>
+</section>
+
+<section id="learn">
+  <h2>学习曲线与难度分桶</h2>
+  <p class="desc">左：按任务批次（每 15 个）的成功率——互惠更新让 chaxu 的涟漪越投越准（或验证它并不改善）。
+     右：按任务难度分桶（需求技能数 × 难度档）的成功率。</p>
+  <div class="charts">
+    <div class="chart" id="chart-batch"></div>
+    <div class="chart" id="chart-diff"></div>
+  </div>
 </section>
 
 <div class="foot">
   <b>诚实边界</b>：全部 agent 为规则化启发（无 LLM）；token 为统一计费模型（full 200 / digest 40 / slice 60 /
   proposal 30 / claim-board 100 / claim 10）；star 的 rounds 含中心串行排队（线性增长模型）。
-  跨多个 seed 的稳定结论是：<b>差序格局赢上下文成本（环是 O(k)，广播与星型是 O(n)，规模越大差距越大）与故障恢复
-  （圈子外扩即重构，星型中心死亡归零）</b>；成功率不设上限主张——全员池的 flat/star 在部分 seed 上更高。
-  复现：<code>python run_demo.py --sweep</code>。 License: MIT.
+  跨多个 seed 的稳定结论：<b>差序格局赢上下文成本（O(k) vs O(n)，规模越大差距越大）、赢故障恢复（外扩即重构）</b>；
+  成功率不设上限主张。Agensh 论文报告的评测轴（pass rate / latency / 组织特化 / 跨规模涌现协作 / 成本）
+  在本 demo 中均有对应指标。复现：<code>python run_demo.py --sweep</code>。 License: MIT.
 </div>
 
 <script>
 const R1=3, R2=4, W=560, H=560, CX=W/2, CY=H/2;
+const COLORS={chaxu:'#b03a2e',flat:'#c98a2d',star:'#5b7aa0'};
+const NAMES={chaxu:'差序格局',flat:'扁平 claim',star:'中心星型'};
+const MODES=['chaxu','flat','star'];
+const TK_COLORS={full:'#8c2f26',digest:'#c98a2d',slice:'#5b7aa0',
+                 proposal:'#7a9a6d',claim_board:'#a05b6d',claim:'#9a958a'};
 let DATA=null, DEMO=null, closeness=null, taskIdx=0, busy=false;
 
 fetch('data.json').then(r=>r.json()).then(d=>{DATA=d; initScene();})
-  .catch(e=>{ document.getElementById('verdict').innerHTML =
+  .catch(()=>{ document.getElementById('verdict').innerHTML =
     '<span style="color:#b03a2e">data.json 加载失败——请在仓库根目录 <code>python -m http.server</code> 后访问。</span>'; });
-fetch('../results/demo.json').then(r=>r.json()).then(d=>{DEMO=d; drawCharts();})
-  .catch(e=>{ const el=document.getElementById('data-err');
-    el.style.display='block'; el.textContent='results/demo.json 加载失败：对比图不可用（clone 后先跑一次 run_demo.py）。'; });
+fetch('../results/demo.json').then(r=>r.json()).then(d=>{DEMO=d; drawAll();})
+  .catch(()=>{ /* 图区保持占位 */ });
 
 function rank(ego){ const o=[]; for(let j=0;j<DATA.agents.length;j++) if(j!==ego) o.push(j);
   o.sort((a,b)=>(closeness[ego][b]-closeness[ego][a])||(a-b)); return o; }
@@ -106,8 +176,6 @@ function rings(ego){ const o=rank(ego); return [o.slice(0,R1), o.slice(R1,R1+R2)
 function covers(a,skill,level,slack){ return (a.skills[skill]||0)>=level-slack; }
 function unsolved(task,contribs){ return task.skills.filter(s=>
   Math.max(0,...contribs.map(c=>(DATA.agents[c[0]].skills[s]||0)+c[1]))<task.level); }
-
-const TEAM_COLORS=['#5b7aa0','#7a9a6d','#a08a5b','#8a6d9a','#6d9a95','#a05b6d'];
 
 function initScene(){
   closeness = DATA.closeness.map(r=>r.slice());
@@ -134,24 +202,19 @@ function layout(ego,ring1,ring2){
   return pos;
 }
 
-let svgRoot=null;
 function drawScene(task,phase){
   const box=document.getElementById('ripple-box');
   const [ring1,ring2]=rings(task.ego);
   const pos=layout(task.ego,ring1,ring2);
   const r1set=new Set(ring1), r2set=new Set(ring2);
   let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
-  s+=`<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
-       markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#999"/></marker></defs>`;
-  // 同队淡背景圈
   s+=`<circle cx="${CX}" cy="${CY}" r="285" fill="none" stroke="#eee7d8" stroke-width="60"/>`;
-  if(phase){ // 波纹
+  if(phase){
     for(const w of phase.ripples){
       s+=`<circle cx="${CX}" cy="${CY}" r="${w.r}" fill="none" stroke="var(--seal)"
            stroke-width="${2.4-w.r/120}" opacity="${Math.max(0,0.75-w.r/400)}"/>`;
     }
   }
-  // 边
   rank(task.ego).forEach(id=>{
     if(!r1set.has(id)&&!r2set.has(id)) return;
     const p=pos[id], e=pos[task.ego];
@@ -163,7 +226,6 @@ function drawScene(task,phase){
          stroke-width="${lit?wdt*2:wdt}" ${dash?`stroke-dasharray="${dash}"`:''}
          opacity="${lit?0.95:0.3+c*0.6}"/>`;
   });
-  // 节点
   DATA.agents.forEach(a=>{
     const p=pos[a.aid]; if(!p) return;
     const isEgo=a.aid===task.ego;
@@ -177,7 +239,7 @@ function drawScene(task,phase){
          fill="#fff" font-family="Georgia">${a.aid}</text>`;
   });
   s+='</svg>';
-  box.innerHTML=s; svgRoot=box.firstChild;
+  box.innerHTML=s;
 }
 
 const FAST=new URLSearchParams(location.search).has('fast');
@@ -189,16 +251,10 @@ async function cast(){
   const [ring1,ring2]=rings(task.ego);
   const verdict=document.getElementById('verdict');
   const phase={ripples:[],lit:new Set()};
-
-  // 波纹一圈圈推出去
   for(let r=20;r<=270;r+=28){ phase.ripples.push({r}); drawScene(task,phase); await sleep(42); }
-
-  // 环1 必应
   ring1.forEach(id=>phase.lit.add(id)); drawScene(task,phase);
   verdict.innerHTML=`<span class="tag" style="background:var(--ring1)">环1</span>
     ${ring1.map(id=>'#'+id).join('、')} 义务必应（全文 200t）…`; await sleep(750);
-
-  // 环2 顺手才帮（确定性近似：相关即应，标注可拒）
   const contribs=ring1.map(id=>[id,0.15]);
   ring2.forEach(id=>{
     const a=DATA.agents[id];
@@ -208,20 +264,18 @@ async function cast(){
   verdict.innerHTML+=`<br><span class="tag" style="background:var(--ring2)">环2</span>
     出力的：${contribs.slice(ring1.length).map(id=>'#'+id).join('、')||'无'}（摘要 40t，顺手才帮）…`;
   await sleep(750);
-
   let missing=unsolved(task,contribs), expanded=false;
   if(missing.length){
     expanded=true;
     verdict.innerHTML+=`<br><span class="tag" style="background:#444">外扩</span>
       尚缺 ${missing.join('/')} → 圈子外扩一格…`; await sleep(700);
-    const order=rank(task.ego), band=order.slice(R1+R2,R1+R2+8);
+    const band=rank(task.ego).slice(R1+R2,R1+R2+8);
     for(let r=230;r<=330;r+=25){ phase.ripples.push({r}); drawScene(task,phase); await sleep(36); }
     band.forEach(id=>{ const a=DATA.agents[id];
       if(task.skills.some(s=>covers(a,s,task.level,0.05))){ phase.lit.add(id); contribs.push([id,0.15]); }});
     drawScene(task,phase); await sleep(700);
   }
   missing=unsolved(task,contribs);
-  // 互惠更新（与 Python 同规则）：成功 → 受助者 +0.05；此处演示只做正向
   if(!missing.length) contribs.forEach(([id])=>{ closeness[task.ego][id]=Math.min(1,closeness[task.ego][id]+0.05); });
   drawScene(task,phase);
   const ok=!missing.length;
@@ -233,38 +287,127 @@ async function cast(){
 }
 document.getElementById('cast').onclick=cast;
 
-// ————— 对比图 —————
-function drawCharts(){
-  const B=DEMO.baseline, PF=DEMO.post_failure||B;
-  const modes=['chaxu','flat','star'], names=['差序格局','扁平 claim','中心星型'];
-  const colors=['#b03a2e','#c98a2d','#5b7aa0'];
-  const axis={axisLabel:{fontSize:12,fontFamily:'inherit'},axisLine:{lineStyle:{color:'#cfc8b8'}}};
-  echarts.init(document.getElementById('chart-success')).setOption({
+// ———————————————— 图表 ————————————————
+function mk(id){ const el=document.getElementById(id);
+  const c=echarts.init(el); window.addEventListener('resize',()=>c.resize()); return c; }
+const AX={axisLabel:{fontSize:12,fontFamily:'inherit'},axisLine:{lineStyle:{color:'#cfc8b8'}}};
+
+function drawAll(){
+  const B=DEMO.baseline, PF=DEMO.post_failure||B, A=DEMO.ablation||{};
+  mk('chart-success').setOption({
     title:{text:'任务成功率 / 故障后恢复率',textStyle:{fontSize:14},left:'center'},
     legend:{top:28}, grid:{top:64,bottom:32,left:44,right:16},
-    xAxis:{type:'category',data:names,...axis}, yAxis:{type:'value',max:1,...axis,
-      axisLabel:{formatter:v=>(v*100)+'%'}},
+    xAxis:{type:'category',data:MODES.map(m=>NAMES[m]),...AX},
+    yAxis:{type:'value',max:1,...AX,axisLabel:{formatter:v=>(v*100)+'%'}},
     series:[
       {name:'baseline 成功率',type:'bar',barWidth:26,
-       data:modes.map((m,i)=>({value:B[m].success_rate,itemStyle:{color:colors[i]}}))},
+       data:MODES.map(m=>({value:B[m].success_rate,itemStyle:{color:COLORS[m]}}))},
       {name:'故障后恢复率',type:'bar',barWidth:26,
-       data:modes.map((m,i)=>({value:(PF[m].post_failure_success_rate??0),itemStyle:{color:colors[i],opacity:.45}}))}]});
-  echarts.init(document.getElementById('chart-tokens')).setOption({
-    title:{text:'上下文 token / 任务（baseline）',textStyle:{fontSize:14},left:'center'},
+       data:MODES.map(m=>({value:(PF[m].post_failure_success_rate??0),
+         itemStyle:{color:COLORS[m],opacity:.45}}))}]});
+  mk('chart-rounds').setOption({
+    title:{text:'延迟：均值 vs p95（star 排队拖长尾）',textStyle:{fontSize:14},left:'center'},
+    legend:{top:28}, grid:{top:64,bottom:32,left:48,right:16},
+    xAxis:{type:'category',data:MODES.map(m=>NAMES[m]),...AX},
+    yAxis:{type:'value',name:'rounds/任务',...AX},
+    series:[
+      {name:'平均轮次',type:'bar',barWidth:26,
+       data:MODES.map(m=>({value:B[m].avg_rounds_per_task,itemStyle:{color:COLORS[m]}}))},
+      {name:'p95 轮次',type:'bar',barWidth:26,
+       data:MODES.map(m=>({value:B[m].rounds_p95,itemStyle:{color:COLORS[m],opacity:.45}}))}]});
+  mk('chart-tokens').setOption({
+    title:{text:'上下文 token / 任务',textStyle:{fontSize:14},left:'center'},
     grid:{top:48,bottom:32,left:56,right:16},
-    xAxis:{type:'category',data:names,...axis}, yAxis:{type:'value',...axis},
+    xAxis:{type:'category',data:MODES.map(m=>NAMES[m]),...AX},
+    yAxis:{type:'value',...AX},
     series:[{type:'bar',barWidth:40,label:{show:true,position:'top',fontSize:11},
-      data:modes.map((m,i)=>({value:B[m].context_tokens_per_task,itemStyle:{color:colors[i]}}))}]});
+      data:MODES.map(m=>({value:B[m].context_tokens_per_task,itemStyle:{color:COLORS[m]}}))}]});
+  const L=DEMO.token_labels||{};
+  const kinds=Object.keys(TK_COLORS).filter(k=>MODES.some(m=>(B[m].tokens_by||{})[k]));
+  mk('chart-breakdown').setOption({
+    title:{text:'token 构成分解（堆叠）',textStyle:{fontSize:14},left:'center'},
+    legend:{top:28,type:'scroll'}, grid:{top:70,bottom:32,left:56,right:16},
+    xAxis:{type:'category',data:MODES.map(m=>NAMES[m]),...AX},
+    yAxis:{type:'value',name:'tokens/任务',...AX},
+    series:kinds.map(k=>({name:L[k]||k,type:'bar',stack:'t',barWidth:40,
+      emphasis:{focus:'series'},
+      data:MODES.map(m=>(B[m].tokens_by||{})[k]||0),
+      color:TK_COLORS[k]}))});
   if(DEMO.sweep){
-    echarts.init(document.getElementById('chart-sweep')).setOption({
-      title:{text:'规模扫描：成本是否随组织变大而爆炸？',subtext:'差序=O(k) 环，广播/星型=O(n)',
+    mk('chart-sweep').setOption({
+      title:{text:'规模扫描：tokens/task 随组织规模的变化',
+        subtext:'chaxu=O(k) 环带 · flat/star=O(n)（12 人同价，96 人 5.3 倍差）',
         textStyle:{fontSize:14},subtextStyle:{fontSize:11,color:'#888'},left:'center'},
       legend:{top:30}, grid:{top:70,bottom:36,left:60,right:24},
-      xAxis:{type:'category',data:DEMO.sweep.map(r=>r.agents+' agents'),...axis},
-      yAxis:{type:'value',name:'tokens/任务',...axis},
-      series:modes.map((m,i)=>({name:names[i],type:'line',smooth:true,symbolSize:7,
-        lineStyle:{width:3,color:colors[i]},itemStyle:{color:colors[i]},
+      xAxis:{type:'category',data:DEMO.sweep.map(r=>r.agents+' agents'),...AX},
+      yAxis:{type:'value',name:'tokens/任务',...AX},
+      series:MODES.map(m=>({name:NAMES[m],type:'line',smooth:true,symbolSize:8,
+        lineStyle:{width:3,color:COLORS[m]},itemStyle:{color:COLORS[m]},
+        label:{show:true,fontSize:10,position:'top'},
         data:DEMO.sweep.map(r=>r[m])}))});
+  }
+  const anames=Object.keys(A);
+  if(anames.length){
+    mk('chart-abl-success').setOption({
+      title:{text:'消融：成功率',textStyle:{fontSize:14},left:'center'},
+      grid:{top:44,bottom:70,left:170,right:40},
+      xAxis:{type:'value',max:1,...AX,axisLabel:{formatter:v=>(v*100)+'%'}},
+      yAxis:{type:'category',data:anames.slice().reverse(),...AX},
+      series:[{type:'bar',barWidth:18,label:{show:true,position:'right',fontSize:11,
+        formatter:p=>(p.value*100).toFixed(1)+'%'},
+        data:anames.slice().reverse().map(n=>({value:A[n].success_rate,
+          itemStyle:{color:n==='chaxu 默认'?'#b03a2e':'#c98a2d'}}))}]});
+    mk('chart-abl-tokens').setOption({
+      title:{text:'消融：tokens/task',textStyle:{fontSize:14},left:'center'},
+      grid:{top:44,bottom:70,left:170,right:60},
+      xAxis:{type:'value',...AX}, yAxis:{type:'category',data:anames.slice().reverse(),...AX},
+      series:[{type:'bar',barWidth:18,label:{show:true,position:'right',fontSize:11},
+        data:anames.slice().reverse().map(n=>({value:A[n].context_tokens_per_task,
+          itemStyle:{color:n==='chaxu 默认'?'#b03a2e':'#7a9a6d'}}))}]});
+    const dNoExpand=A['无外扩'], dFull=A['chaxu 默认'], dWide=A['宽环 r1=5,r2=8'];
+    if(dNoExpand&&dFull){
+      const drop=((dFull.success_rate-dNoExpand.success_rate)*100).toFixed(1);
+      let msg=`<b>外扩是承重墙</b>：拆掉外扩，成功率 ${ (dFull.success_rate*100).toFixed(1)+'%'} → ${ (dNoExpand.success_rate*100).toFixed(1)+'%'}（−${drop}pp）——圈子不扩，差序就只是个更小的扁平组。`;
+      if(dWide) msg+=`　<b>宽环不划算</b>：r1=5,r2=8 与默认同成功率，token 却贵 ${Math.round(dWide.context_tokens_per_task-dFull.context_tokens_per_task)}t——圈子不是越大越好，差序的经济学恰恰在于"平时维持小圈子、事到临头才外扩"。`;
+      document.getElementById('abl-findings').innerHTML=msg;
+    }
+  }
+  mk('chart-gini').setOption({
+    title:{text:'通信基尼系数（触达量不平等度）',textStyle:{fontSize:14},left:'center'},
+    grid:{top:48,bottom:32,left:48,right:16},
+    xAxis:{type:'category',data:MODES.map(m=>NAMES[m]),...AX},
+    yAxis:{type:'value',max:1,...AX},
+    series:[{type:'bar',barWidth:40,label:{show:true,position:'top',fontSize:11},
+      data:MODES.map(m=>({value:B[m].gini_touches,
+        itemStyle:{color:[ '#b03a2e','#c98a2d','#5b7aa0'][MODES.indexOf(m)]}}))}]});
+  const cs=B.chaxu.closeness_top5_share||[];
+  mk('chart-close').setOption({
+    title:{text:'chaxu 关系收束度：top-5 亲密度份额',textStyle:{fontSize:14},left:'center'},
+    grid:{top:48,bottom:36,left:56,right:20},
+    xAxis:{type:'category',data:cs.map((_,i)=>'批次 '+(i+1)),...AX},
+    yAxis:{type:'value',min:0,max:1,...AX,axisLabel:{formatter:v=>(v*100)+'%'}},
+    series:[{type:'line',smooth:true,symbolSize:8,lineStyle:{width:3,color:'#b03a2e'},
+      itemStyle:{color:'#b03a2e'},areaStyle:{opacity:.12,color:'#b03a2e'},
+      data:cs.length?cs:null}]});
+  const bl=MODES.map(m=>B[m].batch_success).filter(x=>x&&x.length);
+  mk('chart-batch').setOption({
+    title:{text:'学习曲线：分批成功率',textStyle:{fontSize:14},left:'center'},
+    legend:{top:28}, grid:{top:64,bottom:36,left:48,right:20},
+    xAxis:{type:'category',data:(bl[0]||[]).map((_,i)=>'批次 '+(i+1)),...AX},
+    yAxis:{type:'value',min:0,max:1,...AX,axisLabel:{formatter:v=>(v*100)+'%'}},
+    series:MODES.map(m=>({name:NAMES[m],type:'line',smooth:true,symbolSize:7,
+      lineStyle:{width:2.5,color:COLORS[m]},itemStyle:{color:COLORS[m]},
+      data:B[m].batch_success}))});
+  const dkeys=Object.keys(B.chaxu.difficulty||{});
+  if(dkeys.length){
+    mk('chart-diff').setOption({
+      title:{text:'难度分桶：成功率',textStyle:{fontSize:14},left:'center'},
+      legend:{top:28}, grid:{top:64,bottom:56,left:48,right:16},
+      xAxis:{type:'category',data:dkeys,...AX,axisLabel:{rotate:24,fontSize:11}},
+      yAxis:{type:'value',max:1,...AX,axisLabel:{formatter:v=>(v*100)+'%'}},
+      series:MODES.map(m=>({name:NAMES[m],type:'bar',barWidth:12,
+        itemStyle:{color:COLORS[m]},
+        data:dkeys.map(k=>(B[m].difficulty||{})[k]??0)}))});
   }
 }
 </script>

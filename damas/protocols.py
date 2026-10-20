@@ -6,11 +6,14 @@
   全员读板（广播 token 大头），冲突按技能最优截断，一轮覆盖不住再 claim 一轮。
 - star（中心 orchestrator）：全部消息过中心，中心串行排队（延迟线性增长），
   中心是单点。
+
+StepResult 额外携带 tokens_by（按上下文类型分解）与 touches
+（每个 agent 的通信触达次数，用于组织结构/特化分析）。
 """
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from damas.world import (World, Task, FULL_CONTEXT_TOKENS, DIGEST_CONTEXT_TOKENS,
                          SLICE_CONTEXT_TOKENS, PROPOSAL_TOKENS,
@@ -36,6 +39,13 @@ class StepResult:
     messages: int
     expanded: bool = False
     note: str = ""
+    tokens_by: dict = field(default_factory=dict)
+    touches: dict = field(default_factory=dict)
+
+    def bump(self, kind: str, amount: int, who: int = -1, n: int = 1) -> None:
+        self.tokens_by[kind] = self.tokens_by.get(kind, 0) + amount
+        if who >= 0:
+            self.touches[who] = self.touches.get(who, 0) + n
 
 
 def _contributors(world: World, pairs) -> list:
@@ -46,32 +56,35 @@ def _contributors(world: World, pairs) -> list:
 
 def run_chaxu(world: World, task: Task, rng: random.Random, cfg: Config,
               disabled: frozenset = frozenset()) -> StepResult:
-    tokens = messages = rounds = 0
+    res = StepResult(success=False, rounds=0, tokens=0, messages=0)
     contributors: list = []
     ego = task.ego
     ring1, ring2 = world.rings(ego, cfg.r1, cfg.r2)
     expansions_left = cfg.max_expand
     expanded = False
+    res.bump("ego_coord", 0, who=ego, n=0)  # 注册 ego 触达计
 
     while True:
-        rounds += 1
+        res.rounds += 1
         # 环1：义务必应，收完整上下文
         for h in ring1:
             if h in disabled:
                 continue
-            tokens += FULL_CONTEXT_TOKENS + PROPOSAL_TOKENS
-            messages += 2
+            res.bump("full", FULL_CONTEXT_TOKENS, who=h, n=2)
+            res.bump("proposal", PROPOSAL_TOKENS)
+            res.messages += 2
             contributors.append((h, 0.15))
         # 环2：收摘要，顺手才帮；有能力而婉拒才疏远（能力不足不怪）
         for h in ring2:
             if h in disabled:
                 continue
-            tokens += DIGEST_CONTEXT_TOKENS + CLAIM_TOKENS
-            messages += 2
+            res.bump("digest", DIGEST_CONTEXT_TOKENS, who=h, n=2)
+            res.bump("claim", CLAIM_TOKENS)
+            res.messages += 2
             a = world.agents[h]
             relevant = any(a.covers(s, task.level, slack=0.05) for s in task.skills)
             if relevant and rng.random() >= cfg.p_decline:
-                tokens += PROPOSAL_TOKENS
+                res.bump("proposal", PROPOSAL_TOKENS)
                 contributors.append((h, 0.05))
             elif relevant:
                 world.alienate(ego, h, cfg.beta)
@@ -88,8 +101,9 @@ def run_chaxu(world: World, task: Task, rng: random.Random, cfg: Config,
         for h in new_band:
             if h in disabled:
                 continue
-            tokens += FULL_CONTEXT_TOKENS + PROPOSAL_TOKENS
-            messages += 2
+            res.bump("full", FULL_CONTEXT_TOKENS, who=h, n=2)
+            res.bump("proposal", PROPOSAL_TOKENS)
+            res.messages += 2
             a = world.agents[h]
             if any(a.covers(s, task.level, slack=0.05) for s in task.skills):
                 contributors.append((h, 0.15))
@@ -102,7 +116,11 @@ def run_chaxu(world: World, task: Task, rng: random.Random, cfg: Config,
     if success:
         for h, _b in contributors:
             world.reward(ego, h, cfg.alpha)
-    return StepResult(success, rounds, tokens, messages, expanded=expanded)
+    res.success = success
+    res.tokens = sum(res.tokens_by.values())
+    res.touches[ego] = res.touches.get(ego, 0) + 2  # 发起请求 + 合并提案
+    res.expanded = expanded
+    return res
 
 
 # ———————————————————————————————— 扁平 claim ————————————————————————————————
@@ -110,14 +128,18 @@ def run_chaxu(world: World, task: Task, rng: random.Random, cfg: Config,
 def run_flat(world: World, task: Task, rng: random.Random, cfg: Config,
              removed: frozenset = frozenset()) -> StepResult:
     pool = [a for a in world.agents if a.aid not in removed and a.aid != task.ego]
-    tokens = messages = rounds = 0
+    res = StepResult(success=False, rounds=0, tokens=0, messages=0)
     contributors: list = []
+    ego = task.ego
 
     for attempt in (0, 1):  # claim 板常驻工作区：第二轮只需再 claim
-        rounds += 1
+        res.rounds += 1
         if attempt == 0:
-            tokens += CLAIM_BOARD_TOKENS * len(pool)
-            messages += 1  # 一次发布
+            res.bump("claim_board", CLAIM_BOARD_TOKENS * len(pool))
+            for a in pool:
+                res.touches[a.aid] = res.touches.get(a.aid, 0) + 1
+            res.messages += 1  # 一次发布
+        res.touches[ego] = res.touches.get(ego, 0) + 1  # 发布/合并
         slack = 0.05 - 0.05 * attempt  # 第二轮放宽到恰好达标
         claimers = [a for a in pool
                     if any(a.covers(s, task.level, slack) for s in task.skills)]
@@ -125,17 +147,20 @@ def run_flat(world: World, task: Task, rng: random.Random, cfg: Config,
             claimers.sort(key=lambda a: (-sum(a.skills.get(s, 0.0)
                                               for s in task.skills), a.aid))
             for a in claimers[cfg.max_claims:]:
-                tokens += CLAIM_TOKENS
+                res.bump("claim", CLAIM_TOKENS, who=a.aid, n=1)
             claimers = claimers[:cfg.max_claims]
         for a in claimers:
-            tokens += CLAIM_TOKENS + PROPOSAL_TOKENS
-            messages += 2
+            res.bump("claim", CLAIM_TOKENS, who=a.aid, n=1)
+            res.bump("proposal", PROPOSAL_TOKENS, who=a.aid, n=1)
+            res.messages += 2
             contributors.append((a, 0.0))
         if not task.unsolved(contributors):
             break
 
     success = not task.unsolved(contributors)
-    return StepResult(success, rounds, tokens, messages)
+    res.success = success
+    res.tokens = sum(res.tokens_by.values())
+    return res
 
 
 # ———————————————————————————————— 中心星型 ————————————————————————————————
@@ -145,20 +170,25 @@ def run_star(world: World, task: Task, rng: random.Random, cfg: Config,
     center = 0
     if center_down:
         return StepResult(False, 0, 0, 0, note="center_down")
-    tokens = messages = 0
+    res = StepResult(success=False, rounds=0, tokens=0, messages=0)
     workers = [a.aid for a in world.agents if a.aid != center and a.aid != task.ego]
-    tokens += FULL_CONTEXT_TOKENS + PROPOSAL_TOKENS   # ego→中心 上下文往返
-    messages += 2
-    tokens += SLICE_CONTEXT_TOKENS * len(workers)     # 中心向全员发切片
-    messages += len(workers)
+    res.bump("full", FULL_CONTEXT_TOKENS, who=task.ego, n=1)   # ego→中心
+    res.bump("proposal", PROPOSAL_TOKENS, who=task.ego, n=1)   # 中心→ego
+    res.messages += 2
+    res.bump("slice", SLICE_CONTEXT_TOKENS * len(workers), who=center, n=len(workers))
+    res.messages += len(workers)
     contributors: list = []
     for h in workers:
         a = world.agents[h]
         if any(a.covers(s, task.level, slack=0.05) for s in task.skills):
-            tokens += PROPOSAL_TOKENS
+            res.bump("proposal", PROPOSAL_TOKENS, who=h, n=1)
             contributors.append((h, 0.05))
         else:
-            tokens += CLAIM_TOKENS                    # 谢绝回执也占一条消息
+            res.bump("claim", CLAIM_TOKENS, who=h, n=1)        # 谢绝回执也占一条消息
     success = not task.unsolved([(world.agents[h], b) for h, b in contributors])
-    return StepResult(success, rounds=2 + 2 * queue_len, tokens=tokens,
-                      messages=messages + len(workers))
+    res.touches[center] = res.touches.get(center, 0) + 2 + len(workers) * 2
+    res.success = success
+    res.rounds = 2 + 2 * queue_len
+    res.tokens = sum(res.tokens_by.values())
+    res.messages += len(workers)
+    return res
